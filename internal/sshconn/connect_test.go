@@ -23,8 +23,8 @@ import (
 	"github.com/pkg/sftp"
 	gossh "golang.org/x/crypto/ssh"
 
-	"github.com/btraven00/obadm/internal/agent"
-	"github.com/btraven00/obadm/internal/sshconn"
+	"github.com/omnibenchmark/obmon/internal/agent"
+	"github.com/omnibenchmark/obmon/internal/sshconn"
 )
 
 // TestConnect_StreamsViaSSH starts an in-process SSH server whose handler calls
@@ -39,7 +39,7 @@ func TestConnect_StreamsViaSSH(t *testing.T) {
 
 	// Create a dummy agent binary so ensureAgent finds it via SFTP stat.
 	agentData := []byte("#!/bin/sh\n")
-	agentPath := filepath.Join(dir, "obadm-agent")
+	agentPath := filepath.Join(dir, "obmon-agent")
 	if err := os.WriteFile(agentPath, agentData, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -53,12 +53,12 @@ func TestConnect_StreamsViaSSH(t *testing.T) {
 		case strings.Contains(r.URL.Path, "/releases/tags/"):
 			json.NewEncoder(w).Encode(map[string]interface{}{ //nolint:errcheck
 				"assets": []interface{}{
-					map[string]string{"name": "obadm-agent_linux_amd64", "browser_download_url": mockBase + "/agent"},
+					map[string]string{"name": "obmon-agent_linux_amd64", "browser_download_url": mockBase + "/agent"},
 					map[string]string{"name": "checksums.txt", "browser_download_url": mockBase + "/checksums"},
 				},
 			})
 		case r.URL.Path == "/checksums":
-			fmt.Fprintf(w, "%s  dist/obadm-agent_linux_amd64\n", dummyHash) //nolint:errcheck
+			fmt.Fprintf(w, "%s  dist/obmon-agent_linux_amd64\n", dummyHash) //nolint:errcheck
 		default:
 			http.NotFound(w, r)
 		}

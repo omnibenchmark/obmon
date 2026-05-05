@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btraven00/obadm/internal/agent"
+	"github.com/omnibenchmark/obmon/internal/agent"
 )
 
 func TestServe_StreamsExistingLines(t *testing.T) {

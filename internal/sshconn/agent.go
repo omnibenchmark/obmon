@@ -18,9 +18,9 @@ import (
 )
 
 const (
-	githubRepo = "btraven00/obadm"
+	githubRepo = "omnibenchmark/obmon"
 	githubTag  = "nightly"
-	agentAsset = "obadm-agent_linux_amd64"
+	agentAsset = "obmon-agent_linux_amd64"
 )
 
 // GitHubAPIBase is the base URL for GitHub API calls. Override in tests.
@@ -59,7 +59,7 @@ func Deploy(ctx context.Context, cfg Config, localBinary string) error {
 	return uploadViaFTP(sc, localBinary, rpath)
 }
 
-// ensureAgent checks whether obadm-agent exists at agentPath on the remote
+// ensureAgent checks whether obmon-agent exists at agentPath on the remote
 // host. If not, it downloads the latest linux/amd64 release from GitHub and
 // uploads via SFTP. Returns the resolved agent path and resolved remoteFile path
 // (both with ~ expanded using the remote home directory).
@@ -290,7 +290,7 @@ func downloadToTemp(ctx context.Context, url string) (string, error) {
 		return "", fmt.Errorf("download %s: %s", url, resp.Status)
 	}
 
-	f, err := os.CreateTemp("", "obadm-agent-*")
+	f, err := os.CreateTemp("", "obmon-agent-*")
 	if err != nil {
 		return "", err
 	}
@@ -329,6 +329,6 @@ func uploadViaFTP(sc *sftp.Client, localPath, remotePath string) error {
 		return fmt.Errorf("chmod +x: %w", err)
 	}
 
-	log.Printf("uploaded obadm-agent → %s", remotePath)
+	log.Printf("uploaded obmon-agent → %s", remotePath)
 	return nil
 }

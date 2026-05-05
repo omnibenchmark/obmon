@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/btraven00/obadm/internal/cache"
+	"github.com/omnibenchmark/obmon/internal/cache"
 	"github.com/schollz/croc/v10/src/croc"
 	"github.com/schollz/croc/v10/src/models"
 	"github.com/schollz/croc/v10/src/utils"
@@ -71,7 +71,7 @@ func Send(ctx context.Context, run *cache.Run, cfg Config, onCode func(string)) 
 
 	// Create a temp dir with a symlink named <runID>.jsonl so the receiver
 	// sees the run ID in the filename (used for duplicate detection).
-	tmpDir, err := os.MkdirTemp("", "obadm-share-*")
+	tmpDir, err := os.MkdirTemp("", "obmon-share-*")
 	if err != nil {
 		return fmt.Errorf("mktemp: %w", err)
 	}
@@ -127,7 +127,7 @@ func (e *DuplicateRunError) Error() string {
 // already cached.
 func Receive(ctx context.Context, code string, cfg Config) (*cache.Run, error) {
 	// croc writes files to CWD; use a temp dir so we control the location.
-	tmpDir, err := os.MkdirTemp("", "obadm-recv-*")
+	tmpDir, err := os.MkdirTemp("", "obmon-recv-*")
 	if err != nil {
 		return nil, fmt.Errorf("mktemp: %w", err)
 	}

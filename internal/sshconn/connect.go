@@ -29,7 +29,7 @@ type Config struct {
 	IdentityFile string
 	// RemoteFile is the absolute path to telemetry.jsonl on the remote host.
 	RemoteFile string
-	// AgentPath is the absolute path to obadm-agent on the remote host.
+	// AgentPath is the absolute path to obmon-agent on the remote host.
 	AgentPath string
 }
 
@@ -101,7 +101,7 @@ func expandHome(path string) string {
 	return path
 }
 
-// Conn is an active tunnel to a remote obadm-agent.
+// Conn is an active tunnel to a remote obmon-agent.
 type Conn struct {
 	tunnel     net.Conn
 	sshClient  *gossh.Client
@@ -122,7 +122,7 @@ func (c *Conn) Close() error {
 	return nil
 }
 
-// Connect dials the remote SSH server, execs obadm-agent, sets up a local
+// Connect dials the remote SSH server, execs obmon-agent, sets up a local
 // port forward, and returns a Conn whose Read yields raw JSONL lines.
 // The caller must write the resume handshake ({"resume_line":N}) before reading.
 // Empty fields in cfg are resolved from ~/.ssh/config before connecting.

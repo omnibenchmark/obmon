@@ -17,7 +17,7 @@ func cacheRoot() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(base, "obadm", "runs"), nil
+	return filepath.Join(base, "obmon", "runs"), nil
 }
 
 // Run represents an ongoing or completed streaming session.

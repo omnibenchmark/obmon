@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-`obadm` — admin utilities for omnibenchmark. Modern Go codebase (Go 1.22+).
+`obmon` — monitoring utilities for omnibenchmark. Modern Go codebase (Go 1.22+).
 
-The main entrypoint is the `obadm` CLI. Subcommands map to modules:
+The main entrypoint is the `obmon` CLI. Subcommands map to modules:
 
 - **stream** — first module; streams `telemetry.jsonl` from a remote server to a local [Aspire](https://learn.microsoft.com/en-us/dotnet/aspire/) OTel dashboard via OTLP gRPC. Uses a lightweight agent binary deployed to the remote host.
 
@@ -22,10 +22,10 @@ go vet ./...                 # lint
 Build and run:
 
 ```bash
-go build -o obadm ./cmd/obadm
-go build -o obadm-agent ./cmd/obadm-agent
+go build -o obmon ./cmd/obmon
+go build -o obmon-agent ./cmd/obmon-agent
 
-./obadm stream \
+./obmon stream \
   --host remote.example.com \
   --user alice \
   --identity ~/.ssh/id_ed25519 \
@@ -40,9 +40,9 @@ No FUSE. No shell execution on remote. Two binaries:
 ```
 Remote host                              Local machine
 ────────────────────────────────────────────────────────
-obadm-agent                              obadm stream
+obmon-agent                              obmon stream
   ├── opens + tails telemetry.jsonl        ├── SSH dials remote
-  └── streams raw JSONL over TCP           ├── SSH exec: ~/.obadm/bin/obadm-agent
+  └── streams raw JSONL over TCP           ├── SSH exec: ~/.obmon/bin/obmon-agent
        └──── SSH port forward ────────────→├── reads {"port":N} from agent stdout
                                            ├── SSH local port forward → agent port
                                            ├── reads raw JSONL from tunnel
@@ -52,7 +52,7 @@ obadm-agent                              obadm stream
 
 **Key properties:**
 - Agent is a dumb JSONL forwarder (~minimal Go, rarely changes)
-- JSONL→OTLP conversion lives in `obadm` (local, easy to iterate)
+- JSONL→OTLP conversion lives in `obmon` (local, easy to iterate)
 - Agent deployed once via SFTP upload; future versions auto-downloaded from GitHub Releases + SHA256 verified
 - SSH exec uses absolute binary path — no shell metacharacter risk on the agent itself; remote file path is single-quote escaped
 
@@ -64,8 +64,8 @@ obadm-agent                              obadm stream
 
 **Package layout:**
 ```
-cmd/obadm/main.go          # CLI: stream subcommand
-cmd/obadm-agent/main.go    # Agent: listen on random TCP port, tail + stream JSONL
+cmd/obmon/main.go          # CLI: stream subcommand
+cmd/obmon-agent/main.go    # Agent: listen on random TCP port, tail + stream JSONL
 internal/agent/server.go   # agent.Serve(ctx, filePath, listener) — core tail+stream logic
 internal/sshconn/connect.go # SSH dial, agent exec, port forward → returns io.ReadCloser
 internal/otlp/forward.go   # Forward(ctx, reader, endpoint) — JSONL lines → OTLP gRPC

@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/btraven00/obadm/internal/otlp"
+	"github.com/omnibenchmark/obmon/internal/otlp"
 )
 
 // Minimal valid OTLP proto-JSON payloads (base64-encoded IDs per proto3 JSON spec).

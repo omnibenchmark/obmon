@@ -114,7 +114,7 @@ func startDetached(ctx context.Context, runtime string, mounts []string) error {
 // The IIFE runs when the module is loaded and installs a MutationObserver that
 // replaces the logo text once Blazor renders it.
 const brandingSnippet = `
-// obadm: replace Aspire logo text
+// obmon: replace Aspire logo text
 ;(function(){
   var BRAND='omnibenchmark';
   function patch(){
@@ -123,7 +123,7 @@ const brandingSnippet = `
       while((n=w.nextNode())){var t=n.textContent.trim();if(t&&t!==BRAND)n.textContent=n.textContent.replace(t,BRAND);}
     });
     document.querySelectorAll('[href*="aka.ms/dotnet/aspire"]').forEach(function(el){
-      el.setAttribute('href','https://github.com/btraven00/obadm');
+      el.setAttribute('href','https://github.com/omnibenchmark/obmon');
     });
   }
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',patch);}else{patch();}
@@ -141,7 +141,7 @@ const (
 // hiding the "Aspire" text node. ::after injects our brand text instead.
 // :not([title]) targets only the text logo; the icon-only logo has title="Aspire".
 const cssBrandingAppend = `
-/* obadm branding */
+/* obmon branding */
 fluent-anchor.logo:not([title]) { font-size: 0 !important; }
 fluent-anchor.logo:not([title])::after {
   content: 'omnibenchmark';
@@ -154,13 +154,13 @@ fluent-anchor.logo:not([title])::after {
 // ensureBrandingAssets prepares two patched static files and returns the
 // volume mount specs for startDetached. Both files already exist in the image
 // so Docker mounts them as files (not directories).
-// To force a refresh, delete ~/.cache/obadm/aspire-*.
+// To force a refresh, delete ~/.cache/obmon/aspire-*.
 func ensureBrandingAssets(ctx context.Context, runtime string) ([]string, error) {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
 		return nil, err
 	}
-	base := filepath.Join(cacheDir, "obadm")
+	base := filepath.Join(cacheDir, "obmon")
 	if err := os.MkdirAll(base, 0o755); err != nil {
 		return nil, err
 	}

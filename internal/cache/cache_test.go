@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btraven00/obadm/internal/cache"
+	"github.com/omnibenchmark/obmon/internal/cache"
 )
 
 // setCacheDir overrides the OS cache dir for the duration of the test.

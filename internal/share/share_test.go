@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btraven00/obadm/internal/cache"
-	"github.com/btraven00/obadm/internal/share"
+	"github.com/omnibenchmark/obmon/internal/cache"
+	"github.com/omnibenchmark/obmon/internal/share"
 	"github.com/schollz/croc/v10/src/tcp"
 )
 

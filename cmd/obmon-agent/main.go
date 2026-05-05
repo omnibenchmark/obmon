@@ -10,7 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/btraven00/obadm/internal/agent"
+	"github.com/omnibenchmark/obmon/internal/agent"
 )
 
 // Set by -ldflags at build time.
@@ -26,7 +26,7 @@ func main() {
 	flag.Parse()
 
 	if *ver {
-		fmt.Printf("obadm-agent %s (commit %s, built %s)\n", version, commit, date)
+		fmt.Printf("obmon-agent %s (commit %s, built %s)\n", version, commit, date)
 		return
 	}
 
@@ -41,7 +41,7 @@ func main() {
 	}
 
 	port := ln.Addr().(*net.TCPAddr).Port
-	// Write port to stdout for the caller (obadm) to read.
+	// Write port to stdout for the caller (obmon) to read.
 	fmt.Printf(`{"port":%d}`, port)
 	os.Stdout.Sync()
 

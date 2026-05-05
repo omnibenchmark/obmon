@@ -1,4 +1,4 @@
-# obadm Architecture
+# obmon Architecture
 
 ## Overview
 
@@ -7,9 +7,9 @@ Two binaries. No FUSE. No shell execution of user-controlled input.
 ```
 Remote host                              Local machine
 ────────────────────────────────────────────────────────────────────
-obadm-agent                              obadm stream
+obmon-agent                              obmon stream
   └── tails telemetry.jsonl                ├── SSH dials remote
-       streams raw JSONL over TCP          ├── SSH exec: obadm-agent --daemon --file <path>
+       streams raw JSONL over TCP          ├── SSH exec: obmon-agent --daemon --file <path>
             │                              ├── reads {"port":N} or connects to agent.sock
             └──── SSH tunnel ─────────────→├── sends {"resume_line": N}
                                            ├── reads raw JSONL from tunnel
@@ -20,9 +20,9 @@ obadm-agent                              obadm stream
 
 ## Binaries
 
-### `obadm-agent` (remote)
+### `obmon-agent` (remote)
 
-Deployed once to `~/.obadm/bin/obadm-agent` via SFTP. Rarely changes.
+Deployed once to `~/.obmon/bin/obmon-agent` via SFTP. Rarely changes.
 
 Responsibilities:
 - Listen on a TCP port (current) or Unix socket (planned daemon mode)
@@ -30,7 +30,7 @@ Responsibilities:
 - On each new connection: read `{"resume_line": N}`, skip N lines, stream remainder
 - Follow new content as it is appended (poll with 50 ms sleep on EOF)
 
-### `obadm` (local CLI)
+### `obmon` (local CLI)
 
 Subcommands:
 
@@ -48,32 +48,32 @@ Subcommands:
 ### Current: ephemeral SSH exec + TCP port forward
 
 ```
-obadm connects → ssh exec obadm-agent --file <path>
+obmon connects → ssh exec obmon-agent --file <path>
 agent listens on random TCP port → prints {"port": N}
-obadm dials ssh tunnel to 127.0.0.1:N
+obmon dials ssh tunnel to 127.0.0.1:N
 ```
 
-Each `obadm stream` invocation spawns a new agent process. On clean exit the
+Each `obmon stream` invocation spawns a new agent process. On clean exit the
 SSH session closure signals the agent. On unclean exit (client crash, network
 drop) the agent lingers until it next tries to write to the closed tunnel.
 
 ### Planned: persistent daemon + Unix socket forward
 
 ```
-obadm connects → ssh exec obadm-agent --daemon --file <path>   # idempotent
-agent checks ~/.obadm/run/agent.pid:
+obmon connects → ssh exec obmon-agent --daemon --file <path>   # idempotent
+agent checks ~/.obmon/run/agent.pid:
   - PID alive + socket exists → exits 0 (daemon already running)
-  - otherwise → writes PID file, binds ~/.obadm/run/agent.sock, tails file
-obadm opens ssh local forward → agent.sock
+  - otherwise → writes PID file, binds ~/.obmon/run/agent.sock, tails file
+obmon opens ssh local forward → agent.sock
 ```
 
-One agent process per remote file, regardless of how many times `obadm stream`
+One agent process per remote file, regardless of how many times `obmon stream`
 reconnects. PID file staleness handled via `kill(pid, 0)` on startup.
 
 Remote layout:
 ```
-~/.obadm/
-    bin/obadm-agent
+~/.obmon/
+    bin/obmon-agent
     run/
         agent.pid
         agent.sock
@@ -97,7 +97,7 @@ terminated lines already in the local cache file (`wc -l` equivalent).
 
 ## Local Cache
 
-Root: `os.UserCacheDir()/obadm/runs/` (`~/.cache/obadm/runs/` on Linux).
+Root: `os.UserCacheDir()/obmon/runs/` (`~/.cache/obmon/runs/` on Linux).
 
 ```
 <run-uuid>/
@@ -123,8 +123,8 @@ from `meta.json`, so the count is always accurate even after an unclean exit.
 ## Package Layout
 
 ```
-cmd/obadm/main.go              # CLI: stream, runs, replay, share, receive
-cmd/obadm-agent/main.go        # Agent entry point
+cmd/obmon/main.go              # CLI: stream, runs, replay, share, receive
+cmd/obmon-agent/main.go        # Agent entry point
 internal/agent/server.go       # Serve(ctx, filePath, listener) — tail + stream
 internal/sshconn/connect.go    # Connect(ctx, cfg) → io.ReadWriteCloser
 internal/otlp/forward.go       # Forward(ctx, reader, addr) — JSONL → OTLP gRPC
@@ -137,6 +137,6 @@ internal/cache/cache.go        # Run cache: New, Resume, Get, List, Finish
 |---|---|---|
 | Process count | 1 per stream session | 1 per file |
 | Stale processes | possible on unclean exit | only if PID file stale |
-| Agent restart on upgrade | automatic (new exec each time) | requires `obadm agent stop` |
+| Agent restart on upgrade | automatic (new exec each time) | requires `obmon agent stop` |
 | SSH sessions per stream | 1 (exec + TCP forward) | 1 (idempotent exec + socket forward) |
 | Remote state | none | PID file + Unix socket |

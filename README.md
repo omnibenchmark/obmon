@@ -1,11 +1,11 @@
-# obadm
+# obmon
 
 Admin tools for nicer benchmarking.
 
 ## Install
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/btraven00/obadm/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/omnibenchmark/obmon/main/install.sh | sh
 ```
 
 See [INSTALL.md](INSTALL.md) for other installation methods.
@@ -15,7 +15,7 @@ See [INSTALL.md](INSTALL.md) for other installation methods.
 With a host configured in `~/.ssh/config`:
 
 ```sh
-obadm stream myserver:/data/omnibenchmark/telemetry.jsonl
+obmon stream myserver:/data/omnibenchmark/telemetry.jsonl
 ```
 
 This will start the Aspire dashboard if not already running, deploy the agent to the remote host if needed, and stream telemetry to `http://localhost:18888`.
@@ -24,12 +24,12 @@ This will start the Aspire dashboard if not already running, deploy the agent to
 
 ## Commands
 
-### `obadm dashboard`
+### `obmon dashboard`
 
 Starts the [Aspire](https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/dashboard/overview) OTel dashboard container if it is not already running, then exits.
 
 ```sh
-./obadm dashboard
+./obmon dashboard
 ```
 
 | Flag | Default | Description |
@@ -40,25 +40,25 @@ Dashboard UI is available at `http://localhost:18888` once running.
 
 ---
 
-### `obadm stream`
+### `obmon stream`
 
-Streams `telemetry.jsonl` from a remote host to the local Aspire dashboard via OTLP gRPC over an SSH tunnel. Starts Aspire automatically if not running. Deploys `obadm-agent` to the remote host if not present.
+Streams `telemetry.jsonl` from a remote host to the local Aspire dashboard via OTLP gRPC over an SSH tunnel. Starts Aspire automatically if not running. Deploys `obmon-agent` to the remote host if not present.
 
 ```sh
-./obadm stream [user@]host:path [flags]
+./obmon stream [user@]host:path [flags]
 ```
 
 Examples:
 
 ```sh
 # host alias from ~/.ssh/config
-./obadm stream myserver:/data/omnibenchmark/telemetry.jsonl
+./obmon stream myserver:/data/omnibenchmark/telemetry.jsonl
 
 # explicit user and host
-./obadm stream alice@remote.example.com:/data/omnibenchmark/telemetry.jsonl
+./obmon stream alice@remote.example.com:/data/omnibenchmark/telemetry.jsonl
 
 # with a non-default SSH key
-./obadm stream myserver:/data/omnibenchmark/telemetry.jsonl --identity ~/.ssh/id_ed25519
+./obmon stream myserver:/data/omnibenchmark/telemetry.jsonl --identity ~/.ssh/id_ed25519
 ```
 
 `user`, hostname, port, and identity file are resolved from `~/.ssh/config` when not provided.
@@ -67,4 +67,4 @@ Examples:
 |---|---|---|
 | `--identity` | `~/.ssh/config` | Path to SSH private key |
 | `--aspire` | `localhost:4317` | Local Aspire OTLP gRPC endpoint |
-| `--agent-path` | `~/.obadm/bin/obadm-agent` | Path to `obadm-agent` on remote |
+| `--agent-path` | `~/.obmon/bin/obmon-agent` | Path to `obmon-agent` on remote |

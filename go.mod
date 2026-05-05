@@ -1,4 +1,4 @@
-module github.com/btraven00/obadm
+module github.com/omnibenchmark/obmon
 
 go 1.24.0
 

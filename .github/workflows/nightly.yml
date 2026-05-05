@@ -57,8 +57,8 @@ jobs:
             for GOARCH in amd64 arm64; do
               GOOS=$GOOS GOARCH=$GOARCH \
                 go build -trimpath -ldflags "$LDFLAGS" \
-                -o dist/obadm_${GOOS}_${GOARCH} \
-                ./cmd/obadm
+                -o dist/obmon_${GOOS}_${GOARCH} \
+                ./cmd/obmon
             done
           done
 
@@ -66,8 +66,8 @@ jobs:
           for GOARCH in amd64 arm64; do
             GOOS=linux GOARCH=$GOARCH \
               go build -trimpath -ldflags "$LDFLAGS" \
-              -o dist/obadm-agent_linux_${GOARCH} \
-              ./cmd/obadm-agent
+              -o dist/obmon-agent_linux_${GOARCH} \
+              ./cmd/obmon-agent
           done
 
       - name: Checksums

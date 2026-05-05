@@ -8,11 +8,11 @@ case "$ARCH" in
   aarch64) ARCH=arm64 ;;
 esac
 
-DEST="$HOME/.obadm/bin/obadm"
-mkdir -p "$HOME/.obadm/bin"
+DEST="$HOME/.obmon/bin/obmon"
+mkdir -p "$HOME/.obmon/bin"
 
-URL="https://github.com/btraven00/obadm/releases/download/nightly/obadm_${OS}_${ARCH}"
-echo "Downloading obadm..."
+URL="https://github.com/omnibenchmark/obmon/releases/download/nightly/obmon_${OS}_${ARCH}"
+echo "Downloading obmon..."
 curl -fsSL "$URL" -o "$DEST"
 chmod +x "$DEST"
 echo "Installed: $DEST"
@@ -20,10 +20,10 @@ echo "Installed: $DEST"
 # Append PATH export to a shell rc file, with permission.
 add_to_path() {
   RC="$1"
-  LINE='export PATH="$HOME/.obadm/bin:$PATH"'
+  LINE='export PATH="$HOME/.obmon/bin:$PATH"'
 
   # Skip if already present.
-  if [ -f "$RC" ] && grep -qF '.obadm/bin' "$RC"; then
+  if [ -f "$RC" ] && grep -qF '.obmon/bin' "$RC"; then
     echo "$RC: PATH entry already present, skipping."
     return
   fi
@@ -37,12 +37,12 @@ add_to_path() {
     return
   }
 
-  printf 'Add %s to PATH in %s? [y/N] ' '$HOME/.obadm/bin' "$RC"
+  printf 'Add %s to PATH in %s? [y/N] ' '$HOME/.obmon/bin' "$RC"
   read -r REPLY <&3 || REPLY=''
   exec 3<&-
   case "$REPLY" in
     [yY]|[yY][eE][sS])
-      printf '\n# obadm\n%s\n' "$LINE" >> "$RC"
+      printf '\n# obmon\n%s\n' "$LINE" >> "$RC"
       echo "Updated $RC."
       ;;
     *)
@@ -58,9 +58,9 @@ case "$SHELL_NAME" in
   bash) add_to_path "$HOME/.bashrc" ;;
   *)
     echo "Unknown shell ($SHELL_NAME). Add the following to your shell rc manually:"
-    echo '  export PATH="$HOME/.obadm/bin:$PATH"'
+    echo '  export PATH="$HOME/.obmon/bin:$PATH"'
     ;;
 esac
 
 echo ""
-echo "Run 'obadm --help' after opening a new shell (or: source the rc file above)."
+echo "Run 'obmon --help' after opening a new shell (or: source the rc file above)."

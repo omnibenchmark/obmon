@@ -15,11 +15,11 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/btraven00/obadm/internal/aspire"
-	"github.com/btraven00/obadm/internal/cache"
-	"github.com/btraven00/obadm/internal/otlp"
-	"github.com/btraven00/obadm/internal/share"
-	"github.com/btraven00/obadm/internal/sshconn"
+	"github.com/omnibenchmark/obmon/internal/aspire"
+	"github.com/omnibenchmark/obmon/internal/cache"
+	"github.com/omnibenchmark/obmon/internal/otlp"
+	"github.com/omnibenchmark/obmon/internal/share"
+	"github.com/omnibenchmark/obmon/internal/sshconn"
 )
 
 // Set by -ldflags at build time.
@@ -29,7 +29,7 @@ var (
 	date    = "unknown"
 )
 
-const defaultAgentPath = "~/.obadm/bin/obadm-agent"
+const defaultAgentPath = "~/.obmon/bin/obmon-agent"
 
 func buildVersion() string {
 	v, c, d := version, commit, date
@@ -56,12 +56,12 @@ func buildVersion() string {
 			}
 		}
 	}
-	return fmt.Sprintf("obadm %s (commit %s, built %s)", v, c, d)
+	return fmt.Sprintf("obmon %s (commit %s, built %s)", v, c, d)
 }
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: obadm <command> [flags]")
+		fmt.Fprintln(os.Stderr, "usage: obmon <command> [flags]")
 		fmt.Fprintln(os.Stderr, "commands: stream, runs, replay, share, receive, agent, dashboard, version")
 		os.Exit(1)
 	}
@@ -112,11 +112,11 @@ func runStream(args []string) {
 	fs := flag.NewFlagSet("stream", flag.ExitOnError)
 	identity := fs.String("identity", "", "path to SSH private key (default: ~/.ssh/config IdentityFile)")
 	otlpAddr := fs.String("aspire", "localhost:4317", "local Aspire OTLP gRPC endpoint")
-	agentPath := fs.String("agent-path", defaultAgentPath, "path to obadm-agent on remote")
+	agentPath := fs.String("agent-path", defaultAgentPath, "path to obmon-agent on remote")
 	fs.Parse(args) //nolint:errcheck
 
 	if fs.NArg() == 0 {
-		fmt.Fprintln(os.Stderr, "usage: obadm stream [--identity key] [--aspire addr] [user@]host:path")
+		fmt.Fprintln(os.Stderr, "usage: obmon stream [--identity key] [--aspire addr] [user@]host:path")
 		os.Exit(1)
 	}
 
@@ -233,13 +233,13 @@ func runRuns(args []string) {
 		return
 	}
 	fmt.Fprintf(os.Stderr, "unknown runs subcommand: %s\n", args[0])
-	fmt.Fprintln(os.Stderr, "usage: obadm runs list")
+	fmt.Fprintln(os.Stderr, "usage: obmon runs list")
 	os.Exit(1)
 }
 
 func runAgent(args []string) {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: obadm agent <subcommand>")
+		fmt.Fprintln(os.Stderr, "usage: obmon agent <subcommand>")
 		fmt.Fprintln(os.Stderr, "subcommands: deploy")
 		os.Exit(1)
 	}
@@ -256,11 +256,11 @@ func runAgentDeploy(args []string) {
 	fs := flag.NewFlagSet("agent deploy", flag.ExitOnError)
 	identity := fs.String("identity", "", "path to SSH private key")
 	agentPath := fs.String("agent-path", defaultAgentPath, "destination path on remote")
-	binary := fs.String("binary", "./obadm-agent", "local obadm-agent binary to upload")
+	binary := fs.String("binary", "./obmon-agent", "local obmon-agent binary to upload")
 	fs.Parse(args) //nolint:errcheck
 
 	if fs.NArg() == 0 {
-		fmt.Fprintln(os.Stderr, "usage: obadm agent deploy [--identity key] [--binary path] [user@]host")
+		fmt.Fprintln(os.Stderr, "usage: obmon agent deploy [--identity key] [--binary path] [user@]host")
 		os.Exit(1)
 	}
 
@@ -288,7 +288,7 @@ func runReplay(args []string) {
 	fs.Parse(args) //nolint:errcheck
 
 	if fs.NArg() == 0 {
-		fmt.Fprintln(os.Stderr, "usage: obadm replay [--aspire addr] <run-id>")
+		fmt.Fprintln(os.Stderr, "usage: obmon replay [--aspire addr] <run-id>")
 		os.Exit(1)
 	}
 	runID := fs.Arg(0)
@@ -318,7 +318,7 @@ func runShare(args []string) {
 	fs.Parse(args) //nolint:errcheck
 
 	if fs.NArg() == 0 {
-		fmt.Fprintln(os.Stderr, "usage: obadm share <run-id>")
+		fmt.Fprintln(os.Stderr, "usage: obmon share <run-id>")
 		os.Exit(1)
 	}
 
@@ -333,7 +333,7 @@ func runShare(args []string) {
 
 	if err := share.Send(ctx, run, share.Config{}, func(code string) {
 		fmt.Printf("share code: %s\n", code)
-		fmt.Printf("receive with: obadm receive %s\n", code)
+		fmt.Printf("receive with: obmon receive %s\n", code)
 		log.Printf("waiting for receiver...")
 	}); err != nil {
 		log.Fatalf("share: %v", err)
@@ -346,7 +346,7 @@ func runReceive(args []string) {
 	fs.Parse(args) //nolint:errcheck
 
 	if fs.NArg() == 0 {
-		fmt.Fprintln(os.Stderr, "usage: obadm receive <croc-code>")
+		fmt.Fprintln(os.Stderr, "usage: obmon receive <croc-code>")
 		os.Exit(1)
 	}
 	code := fs.Arg(0)
@@ -360,12 +360,12 @@ func runReceive(args []string) {
 	if err != nil {
 		var dupErr *share.DuplicateRunError
 		if errors.As(err, &dupErr) {
-			log.Fatalf("run %s already in cache; use: obadm replay %s", dupErr.Run.ID[:8], dupErr.Run.ID[:8])
+			log.Fatalf("run %s already in cache; use: obmon replay %s", dupErr.Run.ID[:8], dupErr.Run.ID[:8])
 		}
 		log.Fatalf("receive: %v", err)
 	}
 	log.Printf("received %d lines → run %s", run.Lines, run.ID[:8])
-	log.Printf("replay with: obadm replay %s", run.ID[:8])
+	log.Printf("replay with: obmon replay %s", run.ID[:8])
 }
 
 // parseRemoteSpec parses [user@]host:path (scp syntax).
