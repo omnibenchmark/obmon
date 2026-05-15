@@ -1,22 +1,22 @@
 # obmon
 
-Monitor your benchmarks (over ssh).
+Monitor your benchmarks (over ssh, or locally).
 
 ## What
 
 `obmon` is a single binary that assumes two things:
 
-- You are running `omnibenchmark >= 0.6` with telemetry support enabled, on a server.
-- You can ssh into that machine.
+- You are running `omnibenchmark >= 0.6` with telemetry support enabled.
+- If they run on a remote server, you can ssh into that machine.
 
-From there, it will download _traces_ of your benchmark executor and help you
-browsing those traces (including logs) locally from the comfort of your own
+From there, it will get the _traces_ from your benchmark executor and help you
+browsing those traces (including logs) from the comfort of your own
 laptop. This means you don't need external infrastructure 24/7, but you need to
 be able to run docker (or podman) on your own machine.
 
-Need to collaborate with coworkers? No problem! `obrun` also allows you to
+Need to collaborate with coworkers? No problem! `obmon` also allows you to
 _share_ a trace of a particular run, so you can safely send the execution
-traces to other devices.
+traces to other devices. See [docs/collaboration.md](docs/collaboration.md).
 
 ## Install
 
@@ -28,7 +28,28 @@ See [INSTALL.md](INSTALL.md) for other installation methods.
 
 ## Quick start
 
-With a host configured in `~/.ssh/config`:
+### Local runs
+
+```
+ob run --telemetry benchmark.yaml
+```
+
+In a separate terminal:
+
+```
+obmon stream telemetry.jsonl
+```
+
+
+### Server runs
+
+You run the benchmark on the server with `--telemetry`:
+
+```
+ob run --telemetry benchmark.yaml
+```
+
+And then, from your local machine, with a server configured in `~/.ssh/config`:
 
 ```sh
 obmon stream myserver:/data/omnibenchmark/telemetry.jsonl
@@ -45,7 +66,7 @@ This will start the Aspire dashboard if not already running, deploy the agent to
 Starts the [Aspire](https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/dashboard/overview) OTel dashboard container if it is not already running, then exits.
 
 ```sh
-./obmon dashboard
+obmon dashboard
 ```
 
 | Flag | Default | Description |
