@@ -65,14 +65,21 @@ func findRuntime() (string, error) {
 }
 
 func isRunning(ctx context.Context, runtime string) bool {
+	// Docker stores container names with a leading slash ("/aspire"); podman
+	// does not. Filter by substring, then exact-match each name to be portable.
 	out, err := exec.CommandContext(ctx, runtime, "ps",
-		"--filter", "name=^/"+containerName+"$",
+		"--filter", "name="+containerName,
 		"--format", "{{.Names}}",
 	).Output()
 	if err != nil {
 		return false
 	}
-	return strings.TrimSpace(string(out)) == containerName
+	for _, name := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		if strings.TrimPrefix(name, "/") == containerName {
+			return true
+		}
+	}
+	return false
 }
 
 func startDetached(ctx context.Context, runtime string, mounts []string) error {

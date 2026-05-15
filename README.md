@@ -12,7 +12,7 @@ Monitor your benchmarks (over ssh).
 From there, it will download _traces_ of your benchmark executor and help you
 browsing those traces (including logs) locally from the comfort of your own
 laptop. This means you don't need external infrastructure 24/7, but you need to
-be able to run docker in your own machine.
+be able to run docker (or podman) on your own machine.
 
 Need to collaborate with coworkers? No problem! `obrun` also allows you to
 _share_ a trace of a particular run, so you can safely send the execution
