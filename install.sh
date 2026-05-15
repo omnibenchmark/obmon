@@ -63,4 +63,4 @@ case "$SHELL_NAME" in
 esac
 
 echo ""
-echo "Run 'obmon --help' after opening a new shell (or: source the rc file above)."
+echo "Run 'obmon' after opening a new shell (or: source the rc file above)."
