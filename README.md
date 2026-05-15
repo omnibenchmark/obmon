@@ -58,11 +58,14 @@ Dashboard UI is available at `http://localhost:18888` once running.
 
 ### `obmon stream`
 
-Streams `telemetry.jsonl` from a remote host to the local Aspire dashboard via OTLP gRPC over an SSH tunnel. Starts Aspire automatically if not running. Deploys `obmon-agent` to the remote host if not present.
+Streams `telemetry.jsonl` to the local Aspire dashboard via OTLP gRPC. For remote targets, opens an SSH tunnel and deploys `obmon-agent` to the remote host if not present. For local targets, tails the file directly — no SSH, no agent. Starts Aspire automatically if not running.
 
 ```sh
-obmon stream [user@]host:path [flags]
+obmon stream [user@]host:path [flags]   # remote
+obmon stream <local-path> [flags]       # local
 ```
+
+A target is treated as local when it is absolute (`/foo`), explicitly relative (`./foo`, `../foo`, `~/foo`), or contains no `:` separator. Otherwise it is parsed as scp-style `[user@]host:path`.
 
 Examples:
 
@@ -75,9 +78,13 @@ obmon stream alice@remote.example.com:/data/omnibenchmark/telemetry.jsonl
 
 # with a non-default SSH key
 obmon stream myserver:/data/omnibenchmark/telemetry.jsonl --identity ~/.ssh/id_ed25519
+
+# local file (absolute or relative)
+obmon stream /data/omnibenchmark/telemetry.jsonl
+obmon stream ./telemetry.jsonl
 ```
 
-`user`, hostname, port, and identity file are resolved from `~/.ssh/config` when not provided.
+`user`, hostname, port, and identity file are resolved from `~/.ssh/config` when not provided. Local runs are recorded in the cache under host `local`.
 
 | Flag | Default | Description |
 |---|---|---|

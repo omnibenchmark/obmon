@@ -15,6 +15,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/omnibenchmark/obmon/internal/agent"
 	"github.com/omnibenchmark/obmon/internal/aspire"
 	"github.com/omnibenchmark/obmon/internal/cache"
 	"github.com/omnibenchmark/obmon/internal/otlp"
@@ -116,14 +117,23 @@ func runStream(args []string) {
 	fs.Parse(args) //nolint:errcheck
 
 	if fs.NArg() == 0 {
-		fmt.Fprintln(os.Stderr, "usage: obmon stream [--identity key] [--aspire addr] [user@]host:path")
+		fmt.Fprintln(os.Stderr, "usage: obmon stream [--identity key] [--aspire addr] [user@]host:path | <local-path>")
 		os.Exit(1)
 	}
 
-	user, host, remoteFile, ok := parseRemoteSpec(fs.Arg(0))
-	if !ok {
-		fmt.Fprintf(os.Stderr, "error: %q: expected [user@]host:path\n", fs.Arg(0))
-		os.Exit(1)
+	target := fs.Arg(0)
+	local, localPath := isLocalPath(target)
+	var user, host, remoteFile string
+	if local {
+		host = "local"
+		remoteFile = localPath
+	} else {
+		var ok bool
+		user, host, remoteFile, ok = parseRemoteSpec(target)
+		if !ok {
+			fmt.Fprintf(os.Stderr, "error: %q: expected [user@]host:path or a local path\n", target)
+			os.Exit(1)
+		}
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -147,26 +157,38 @@ func runStream(args []string) {
 		log.Printf("resuming run %s from line %d", run.ID, resumeLine)
 	}
 
-	cfg := sshconn.Config{
-		Host:         host,
-		User:         user,
-		IdentityFile: *identity,
-		RemoteFile:   remoteFile,
-		AgentPath:    *agentPath,
-	}
+	var conn io.ReadCloser
+	if local {
+		log.Printf("tailing local file %s", remoteFile)
+		pr, pw := io.Pipe()
+		go func() {
+			err := agent.Tail(ctx, remoteFile, resumeLine, pw)
+			pw.CloseWithError(err)
+		}()
+		conn = pr
+	} else {
+		cfg := sshconn.Config{
+			Host:         host,
+			User:         user,
+			IdentityFile: *identity,
+			RemoteFile:   remoteFile,
+			AgentPath:    *agentPath,
+		}
 
-	log.Printf("connecting to %s...", cfg.Host)
-	conn, err := sshconn.Connect(ctx, cfg)
-	if err != nil {
-		log.Fatalf("connect: %v", err)
+		log.Printf("connecting to %s...", cfg.Host)
+		sshConn, err := sshconn.Connect(ctx, cfg)
+		if err != nil {
+			log.Fatalf("connect: %v", err)
+		}
+		// Send resume handshake before any reads.
+		handshake := fmt.Sprintf(`{"resume_line":%d}`, resumeLine) + "\n"
+		if _, err := fmt.Fprint(sshConn, handshake); err != nil {
+			sshConn.Close()
+			log.Fatalf("send resume handshake: %v", err)
+		}
+		conn = sshConn
 	}
 	defer conn.Close()
-
-	// Send resume handshake before any reads.
-	handshake := fmt.Sprintf(`{"resume_line":%d}`, resumeLine) + "\n"
-	if _, err := fmt.Fprint(conn, handshake); err != nil {
-		log.Fatalf("send resume handshake: %v", err)
-	}
 
 	// Open cache file for appending.
 	cacheFile, err := run.Writer()
@@ -366,6 +388,24 @@ func runReceive(args []string) {
 	}
 	log.Printf("received %d lines → run %s", run.Lines, run.ID[:8])
 	log.Printf("replay with: obmon replay %s", run.ID[:8])
+}
+
+// isLocalPath reports whether s should be treated as a local filesystem path
+// rather than an [user@]host:path scp-style remote spec.
+//
+// A path is local if it is absolute, starts with ./, ../, or ~, or contains
+// no ':' separator (in which case it cannot be a host:path spec).
+func isLocalPath(s string) (bool, string) {
+	if strings.HasPrefix(s, "/") || strings.HasPrefix(s, "./") || strings.HasPrefix(s, "../") || s == "." || s == ".." {
+		return true, s
+	}
+	if strings.HasPrefix(s, "~") {
+		return true, s
+	}
+	if !strings.Contains(s, ":") {
+		return true, s
+	}
+	return false, ""
 }
 
 // parseRemoteSpec parses [user@]host:path (scp syntax).

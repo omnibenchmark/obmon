@@ -51,6 +51,16 @@ func handleConn(ctx context.Context, conn net.Conn, filePath string) {
 		return
 	}
 
+	if err := Tail(ctx, filePath, msg.ResumeLine, conn); err != nil {
+		log.Printf("agent: tail %s: %v", filePath, err)
+	}
+}
+
+// Tail opens filePath (waiting for it to appear if missing), skips the first
+// resumeLine complete lines, then streams remaining and newly-appended lines
+// to w. It follows file rotation (replacement by inode) and returns when ctx
+// is canceled or a non-recoverable I/O error occurs.
+func Tail(ctx context.Context, filePath string, resumeLine int64, w io.Writer) error {
 	// Wait for the file to appear — it may not exist yet if the benchmark
 	// hasn't started writing.
 	var f *os.File
@@ -61,13 +71,12 @@ func handleConn(ctx context.Context, conn net.Conn, filePath string) {
 			break
 		}
 		if !os.IsNotExist(err) {
-			log.Printf("agent: open %s: %v", filePath, err)
-			return
+			return err
 		}
 		log.Printf("agent: waiting for %s...", filePath)
 		select {
 		case <-ctx.Done():
-			return
+			return ctx.Err()
 		case <-time.After(500 * time.Millisecond):
 		}
 	}
@@ -75,20 +84,23 @@ func handleConn(ctx context.Context, conn net.Conn, filePath string) {
 	// the current file on exit.
 	defer func() { f.Close() }()
 
-	w := bufio.NewWriter(conn)
+	bw := bufio.NewWriter(w)
 	r := bufio.NewReader(f)
 
-	// Skip msg.ResumeLine complete lines.
+	// Skip resumeLine complete lines.
 	var skipped int64
-	for skipped < msg.ResumeLine {
+	for skipped < resumeLine {
 		_, err := r.ReadString('\n')
 		if err == io.EOF {
-			time.Sleep(50 * time.Millisecond)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(50 * time.Millisecond):
+			}
 			continue
 		}
 		if err != nil {
-			log.Printf("agent: skip line: %v", err)
-			return
+			return err
 		}
 		skipped++
 	}
@@ -98,7 +110,7 @@ func handleConn(ctx context.Context, conn net.Conn, filePath string) {
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return nil
 		default:
 		}
 
@@ -114,8 +126,7 @@ func handleConn(ctx context.Context, conn net.Conn, filePath string) {
 					f.Close()
 					newF, openErr := os.Open(filePath)
 					if openErr != nil {
-						log.Printf("agent: reopen %s: %v", filePath, openErr)
-						return
+						return openErr
 					}
 					f = newF
 					r.Reset(f)
@@ -127,8 +138,7 @@ func handleConn(ctx context.Context, conn net.Conn, filePath string) {
 			continue
 		}
 		if err != nil {
-			log.Printf("agent: read %s: %v", filePath, err)
-			return
+			return err
 		}
 
 		full := strings.TrimRight(pending.String(), "\r\n")
@@ -137,11 +147,11 @@ func handleConn(ctx context.Context, conn net.Conn, filePath string) {
 			continue
 		}
 
-		if _, err := w.WriteString(full + "\n"); err != nil {
-			return
+		if _, err := bw.WriteString(full + "\n"); err != nil {
+			return err
 		}
-		if err := w.Flush(); err != nil {
-			return
+		if err := bw.Flush(); err != nil {
+			return err
 		}
 	}
 }
