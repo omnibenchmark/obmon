@@ -28,25 +28,31 @@ See [INSTALL.md](INSTALL.md) for other installation methods.
 
 ## Quick start
 
+Start the dashboard (Aspire OTel UI at `http://localhost:18888`):
+
+```sh
+obmon dashboard
+```
+
 ### Local runs
 
 ```
-ob run --telemetry benchmark.yaml
+ob run --telemetry-output /path/to/telemetry.jsonl benchmark.yaml
 ```
 
 In a separate terminal:
 
 ```
-obmon stream telemetry.jsonl
+obmon stream /path/to/telemetry.jsonl
 ```
 
 
 ### Server runs
 
-You run the benchmark on the server with `--telemetry`:
+You run the benchmark on the server, writing telemetry to a known path:
 
 ```
-ob run --telemetry benchmark.yaml
+ob run --telemetry-output /data/omnibenchmark/telemetry.jsonl benchmark.yaml
 ```
 
 And then, from your local machine, with a server configured in `~/.ssh/config`:
@@ -55,7 +61,7 @@ And then, from your local machine, with a server configured in `~/.ssh/config`:
 obmon stream myserver:/data/omnibenchmark/telemetry.jsonl
 ```
 
-This will start the Aspire dashboard if not already running, deploy the agent to the remote host if needed, and stream telemetry to `http://localhost:18888`.
+This will start the Aspire dashboard if not already running (see `obmon dashboard`), deploy the agent to the remote host if needed, and stream telemetry to `http://localhost:18888`.
 
 ---
 
